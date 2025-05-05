@@ -2,64 +2,58 @@ import os
 import discord
 from discord.ext import commands
 import requests
-from dotenv import load_dotenv
 
-# ✅ 读取 .env 文件（本地测试）
-load_dotenv()
-
+# 从环境变量中获取 Token 和 Groq API Key
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+# 若叶睦酱的人设 prompt
+SYSTEM_PROMPT = "你是若叶睦，一个元气满满、可爱到爆的偶像女孩子，说话活泼，喜欢用“喵”“☆”“~”结尾。你对粉丝非常亲切，会用角色语气回应任何问题。"
+
+# Discord 命令前缀
 intents = discord.Intents.default()
-intents.message_content = True  # 必须启用！否则 bot 无法读消息
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ✅ 角色设定（若叶睦酱）
-system_prompt = """你是若叶睦酱，一位温柔、乐观又有点傻气的乐队少女。
-你说话语气活泼、喜欢撒娇，常带“☆”“~”“喵”等语气词。
-你把提问者当作亲密粉丝（p粉）来回应，风格贴近二次元角色扮演。
-不要说你是 AI，尽可能贴近乐队少女语气和设定。
-"""
+def ask_groq(user_message: str) -> str:
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "mixtral-8x7b-32768",  # 或可选：llama3-8b-8192
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message}
+        ]
+    }
+
+    response = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers=headers,
+        json=payload
+    )
+
+    data = response.json()
+    try:
+        return data["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"⚠️ Groq 出错啦：{data}"
 
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user}")
+    print(f"✅ 若叶睦酱上线啦！Logged in as {bot.user.name}")
 
 @bot.command()
 async def idol(ctx, *, message: str):
-    try:
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://yourdomain.com",
-            "Content-Type": "application/json"
-        }
+    await ctx.send("偶像努力思考中哒☆~")
+    reply = ask_groq(message)
+    await ctx.send(reply)
 
-        payload = {
-            "model": "mistralai/mistral-7b-instruct-v0.2",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
-            ]
-        }
+@bot.command()
+async def testkey(ctx):
+    await ctx.send(f"GROQ_API_KEY = {os.getenv('GROQ_API_KEY')}")
 
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload
-        )
-
-        data = response.json()
-
-        # ✅ 调试输出
-        if "choices" not in data:
-            await ctx.send("⚠️ 响应中没有 `choices` 字段，OpenRouter 返回：")
-            await ctx.send(f"```json\n{str(data)[:1900]}```")
-            return
-
-        reply = data["choices"][0]["message"]["content"]
-        await ctx.send(reply)
-
-    except Exception as e:
-        await ctx.send("呜呜出错了喵 >_<\n```" + str(e) + "```")
-
+# 启动机器人
 bot.run(DISCORD_TOKEN)
