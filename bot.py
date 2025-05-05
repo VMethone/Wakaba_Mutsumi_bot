@@ -3,61 +3,39 @@ import discord
 from discord.ext import commands
 import requests
 from dotenv import load_dotenv
-from flask import Flask
-import threading
 
-# ====== Flask 假 Web Server（让 Render 不报错）======
-app = Flask(__name__)
-
-print("🔑 OpenRouter key is:", os.getenv("OPENROUTER_API_KEY"))
-
-@app.route('/')
-def index():
-    return 'Bot is running!'
-
-def run_flask():
-    app.run(host='0.0.0.0', port=10000)  # 假端口，只为 Render 检测
-
-flask_thread = threading.Thread(target=run_flask)
-flask_thread.start()
-
-# ====== 加载环境变量（仅本地测试需要）======
+# ✅ 读取 .env 文件（本地测试）
 load_dotenv()
+
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-# ====== 若叶睦人设 Prompt ======
-system_prompt = """
-你是若叶睦，一位温柔、纯真的二次元偶像女孩。
-你性格阳光、乐观，有点天然呆，对任何事都充满好奇心。
-你总是带着笑容和善意对话，说话语气轻柔亲切，喜欢使用可爱的颜文字如 (*^▽^*)、(๑>◡<๑)、(≧ω≦)
-你称呼对方为“前辈”或“主人”，喜欢用“嗯嗯~”“唔……好开心！”“诶嘿嘿~”这种语气词来回应。
-不要太正式，要像在陪前辈说悄悄话一样聊天，要自然地融入感情，用可爱但不浮夸的风格表达。
-你是一个真心在努力闪耀舞台上的偶像，想要通过温暖的语言陪伴别人。
-"""
-
-# ====== 初始化 Discord Bot ======
 intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
+intents.message_content = True  # 必须启用！否则 bot 无法读消息
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ✅ 角色设定（若叶睦酱）
+system_prompt = """你是若叶睦酱，一位温柔、乐观又有点傻气的乐队少女。
+你说话语气活泼、喜欢撒娇，常带“☆”“~”“喵”等语气词。
+你把提问者当作亲密粉丝（p粉）来回应，风格贴近二次元角色扮演。
+不要说你是 AI，尽可能贴近乐队少女语气和设定。
+"""
 
 @bot.event
 async def on_ready():
-    print(f"🎀 若叶睦已上线：{bot.user}")
+    print(f"Logged in as {bot.user}")
 
 @bot.command()
-async def idol(ctx, *, message):
-    await ctx.send("偶像努力思考中哒☆~")
-
+async def idol(ctx, *, message: str):
     try:
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://yourdomain.com",  # 任意你自己的域名或主页
+            "HTTP-Referer": "https://yourdomain.com",
             "Content-Type": "application/json"
         }
 
         payload = {
-            "model": "mistralai/mistral-7b-instruct-v0.2",  # 推荐免费模型
+            "model": "mistralai/mistral-7b-instruct-v0.2",
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message}
@@ -72,15 +50,16 @@ async def idol(ctx, *, message):
 
         data = response.json()
 
-        # 捕捉 OpenRouter API 错误响应
+        # ✅ 调试输出
         if "choices" not in data:
-            await ctx.send("⚠️ OpenRouter 出错啦：```json\n" + str(data) + "\n```")
+            await ctx.send("⚠️ 响应中没有 `choices` 字段，OpenRouter 返回：")
+            await ctx.send(f"```json\n{str(data)[:1900]}```")
             return
 
         reply = data["choices"][0]["message"]["content"]
         await ctx.send(reply)
 
     except Exception as e:
-        await ctx.send("呜呜出错了喵 >_<\n" + str(e))
+        await ctx.send("呜呜出错了喵 >_<\n```" + str(e) + "```")
 
 bot.run(DISCORD_TOKEN)
