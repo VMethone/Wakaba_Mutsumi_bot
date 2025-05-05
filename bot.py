@@ -5,8 +5,8 @@ import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-DISCORD_TOKEN = os.getenv("MTM2ODg0MjMwNDA1NTY3Njk3MA.G94p8D.sJQENuZRPQZ5ewehrVNlc2vRuLlVR-BaPKYpOw")
-OPENROUTER_API_KEY = os.getenv("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")
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 intents = discord.Intents.default()
 intents.message_content = True
