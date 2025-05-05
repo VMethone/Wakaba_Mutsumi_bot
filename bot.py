@@ -55,7 +55,7 @@ async def idol(ctx, *, message):
         }
 
         payload = {
-            "model": "mistralai/mistral-7b-instruct",  # 推荐免费模型
+            "model": "mistralai/mistral-7b-instruct-v0.2",  # 推荐免费模型
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message}
