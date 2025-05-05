@@ -22,7 +22,7 @@ def ask_groq(user_message: str) -> str:
     }
 
     payload = {
-        "model": "mixtral-8x7b-32768",  # 或可选：llama3-8b-8192
+        "model": "llama3-8b-8192",
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message}
