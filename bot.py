@@ -9,6 +9,8 @@ import threading
 # ====== Flask 假 Web Server（让 Render 不报错）======
 app = Flask(__name__)
 
+print("🔑 OpenRouter key is:", os.getenv("OPENROUTER_API_KEY"))
+
 @app.route('/')
 def index():
     return 'Bot is running!'
