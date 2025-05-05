@@ -6,29 +6,25 @@ from dotenv import load_dotenv
 from flask import Flask
 import threading
 
-# 加载环境变量
-load_dotenv()
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
-# 启动一个假 Flask Web Server，用于 Render 检测端口
+# ====== Flask 假 Web Server（让 Render 不报错）======
 app = Flask(__name__)
 
-@app.route("/")
+@app.route('/')
 def index():
-    return "Bot is running!"
+    return 'Bot is running!'
 
 def run_flask():
-    app.run(host="0.0.0.0", port=10000)
+    app.run(host='0.0.0.0', port=10000)  # 假端口，只为 Render 检测
 
 flask_thread = threading.Thread(target=run_flask)
 flask_thread.start()
 
-# Discord Bot 初始化
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+# ====== 加载环境变量（仅本地测试需要）======
+load_dotenv()
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
+# ====== 若叶睦人设 Prompt ======
 system_prompt = """
 你是若叶睦，一位温柔、纯真的二次元偶像女孩。
 你性格阳光、乐观，有点天然呆，对任何事都充满好奇心。
@@ -38,10 +34,14 @@ system_prompt = """
 你是一个真心在努力闪耀舞台上的偶像，想要通过温暖的语言陪伴别人。
 """
 
+# ====== 初始化 Discord Bot ======
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"🎀 偶像机器人已上线：{bot.user}")
+    print(f"🎀 若叶睦已上线：{bot.user}")
 
 @bot.command()
 async def idol(ctx, *, message):
@@ -50,11 +50,12 @@ async def idol(ctx, *, message):
     try:
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://yourdomain.com",
+            "HTTP-Referer": "https://yourdomain.com",  # 任意你自己的域名或主页
             "Content-Type": "application/json"
         }
+
         payload = {
-            "model": "mistralai/mistral-7b-instruct",
+            "model": "mistralai/mistral-7b-instruct",  # 推荐免费模型
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": message}
@@ -67,7 +68,14 @@ async def idol(ctx, *, message):
             json=payload
         )
 
-        reply = response.json()["choices"][0]["message"]["content"]
+        data = response.json()
+
+        # 捕捉 OpenRouter API 错误响应
+        if "choices" not in data:
+            await ctx.send("⚠️ OpenRouter 出错啦：```json\n" + str(data) + "\n```")
+            return
+
+        reply = data["choices"][0]["message"]["content"]
         await ctx.send(reply)
 
     except Exception as e:
