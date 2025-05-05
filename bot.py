@@ -52,7 +52,6 @@ async def on_ready():
 
 @bot.command()
 async def idol(ctx, *, message: str):
-    await ctx.send("偶像努力思考中哒☆~")
     reply = ask_groq(message)
     await ctx.send(reply)
 
