@@ -51,7 +51,7 @@ async def on_ready():
     print(f"✅ 若叶睦酱上线啦！Logged in as {bot.user.name}")
 
 @bot.command()
-async def idol(ctx, *, message: str):
+async def mutsumi(ctx, *, message: str):
     reply = ask_groq(message)
     await ctx.send(reply)
 
