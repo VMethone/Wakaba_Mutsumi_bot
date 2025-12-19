@@ -3,3 +3,4 @@ requests
 python-dotenv
 flask
 openai
+gradio_client
