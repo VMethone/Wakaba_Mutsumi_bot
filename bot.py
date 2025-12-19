@@ -166,6 +166,7 @@ async def play_voice(ctx, text: str):
 # =========================
 @bot.event
 async def on_ready():
+    print("Opus loaded:", discord.opus.is_loaded())
     print(f"✅ 流萤上线了：{bot.user}")
 
 # =========================
